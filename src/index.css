@@ -1,0 +1,126 @@
+
+@import url('https://fonts.googleapis.com/css2?family=VT323&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Permanent+Marker&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 42 38% 92%;
+    --foreground: 222.2 84% 4.9%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 222.2 84% 4.9%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 222.2 84% 4.9%;
+
+    --primary: 120 30% 26%;
+    --primary-foreground: 210 40% 98%;
+
+    --secondary: 30 44% 59%;
+    --secondary-foreground: 222.2 47.4% 11.2%;
+
+    --muted: 210 40% 96.1%;
+    --muted-foreground: 215.4 16.3% 46.9%;
+
+    --accent: 0 69% 52%;
+    --accent-foreground: 222.2 47.4% 11.2%;
+
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 210 40% 98%;
+
+    --border: 214.3 31.8% 91.4%;
+    --input: 214.3 31.8% 91.4%;
+    --ring: 222.2 84% 4.9%;
+
+    --radius: 0.5rem;
+  }
+
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-baseball-cream text-foreground overflow-hidden;
+    font-family: 'VT323', 'Press Start 2P', monospace;
+  }
+}
+
+@layer components {
+  .win95-window {
+    @apply bg-white border-2 border-gray-300 shadow-[2px_2px_0_rgba(0,0,0,0.1),inset_1px_1px_0_white,inset_-1px_-1px_0_#c0c0c0];
+    user-select: none;
+  }
+  
+  .win95-titlebar {
+    @apply bg-baseball-green text-white px-2 py-1 flex justify-between items-center;
+    user-select: none;
+  }
+  
+  .win95-button {
+    @apply bg-gray-200 border border-t-white border-l-white border-b-gray-800 border-r-gray-800 px-2 py-1 active:border-t-gray-800 active:border-l-gray-800 active:border-b-white active:border-r-white;
+  }
+  
+  .win95-inset {
+    @apply border border-t-gray-800 border-l-gray-800 border-b-white border-r-white bg-white p-1;
+  }
+  
+  .desktop-icon {
+    @apply flex flex-col items-center justify-center gap-1 p-2 cursor-pointer hover:bg-blue-200 rounded;
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
+  }
+  
+  .baseball-stitch {
+    @apply border-2 border-baseball-red rounded-full relative;
+    position: relative;
+  }
+  
+  .baseball-stitch::before, .baseball-stitch::after {
+    content: '';
+    position: absolute;
+    background-color: #D13438;
+    width: 3px;
+    height: 10px;
+  }
+  
+  .loading-bar {
+    @apply h-4 bg-gray-300 border border-gray-500 overflow-hidden;
+  }
+  
+  .loading-progress {
+    @apply h-full bg-baseball-green animate-loading-progress;
+  }
+}
+
+/* Font face definitions */
+@font-face {
+  font-family: 'VT323';
+  src: url('https://fonts.googleapis.com/css2?family=VT323&display=swap');
+  font-weight: normal;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: 'Press Start 2P';
+  src: url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+  font-weight: normal;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: 'MS Sans Serif';
+  src: url('https://unpkg.com/98.css@0.1.4/dist/ms_sans_serif.woff') format('woff');
+  font-weight: normal;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: 'MS Sans Serif';
+  src: url('https://unpkg.com/98.css@0.1.4/dist/ms_sans_serif_bold.woff') format('woff');
+  font-weight: bold;
+  font-style: normal;
+}
