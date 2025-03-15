@@ -130,6 +130,7 @@ const Radio = () => {
 
   const onPlayerStateChange = (event: YTStateChangeEvent) => {
     const player = event.target;
+    console.log('Player state changed:', event.data);
     
     setIsPlaying(player.getPlayerState() === window.YT.PlayerState.PLAYING);
     
@@ -172,35 +173,34 @@ const Radio = () => {
   };
 
   const skipTrack = (direction: 'next' | 'prev') => {
-    if (!playerRef.current) return;
+    if (!playerRef.current) {
+      console.log('Player not initialized');
+      return;
+    }
     
     try {
       const player = playerRef.current;
-      const currentIndex = player.getPlaylistIndex();
-      const playlist = player.getPlaylist();
+      console.log('Current player state:', player.getPlayerState());
+      console.log('Attempting to skip:', direction);
       
-      if (!playlist) {
-        console.error('No playlist available');
-        return;
-      }
-
+      // Simplified skip logic - let YouTube handle the playlist wrapping
       if (direction === 'next') {
-        if (currentIndex < playlist.length - 1) {
-          player.nextVideo();
-        } else {
-          // If at the end, loop to the beginning
-          player.playVideoAt(0);
-        }
+        player.nextVideo();
+        console.log('Called nextVideo()');
       } else {
-        if (currentIndex > 0) {
-          player.previousVideo();
-        } else {
-          // If at the beginning, loop to the end
-          player.playVideoAt(playlist.length - 1);
-        }
+        player.previousVideo();
+        console.log('Called previousVideo()');
       }
+      
+      // Force update track info after a short delay to allow the video to change
+      setTimeout(() => {
+        if (player) {
+          updateTrackInfo(player);
+        }
+      }, 1000);
+      
     } catch (error) {
-      console.error('Error skipping track:', error);
+      console.error('Error in skipTrack:', error);
     }
   };
 
