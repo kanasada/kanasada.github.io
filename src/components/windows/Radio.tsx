@@ -172,12 +172,35 @@ const Radio = () => {
   };
 
   const skipTrack = (direction: 'next' | 'prev') => {
-    if (playerRef.current) {
-      if (direction === 'next') {
-        playerRef.current.nextVideo();
-      } else {
-        playerRef.current.previousVideo();
+    if (!playerRef.current) return;
+    
+    try {
+      const player = playerRef.current;
+      const currentIndex = player.getPlaylistIndex();
+      const playlist = player.getPlaylist();
+      
+      if (!playlist) {
+        console.error('No playlist available');
+        return;
       }
+
+      if (direction === 'next') {
+        if (currentIndex < playlist.length - 1) {
+          player.nextVideo();
+        } else {
+          // If at the end, loop to the beginning
+          player.playVideoAt(0);
+        }
+      } else {
+        if (currentIndex > 0) {
+          player.previousVideo();
+        } else {
+          // If at the beginning, loop to the end
+          player.playVideoAt(playlist.length - 1);
+        }
+      }
+    } catch (error) {
+      console.error('Error skipping track:', error);
     }
   };
 
