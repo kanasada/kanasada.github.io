@@ -180,22 +180,31 @@ const Radio = () => {
     
     try {
       const player = playerRef.current;
-      console.log('Current player state:', player.getPlayerState());
-      console.log('Attempting to skip:', direction);
+      const currentIndex = player.getPlaylistIndex();
+      const playlist = player.getPlaylist();
       
-      // Simplified skip logic - let YouTube handle the playlist wrapping
-      if (direction === 'next') {
-        player.nextVideo();
-        console.log('Called nextVideo()');
-      } else {
-        player.previousVideo();
-        console.log('Called previousVideo()');
+      console.log('Current index:', currentIndex);
+      console.log('Playlist length:', playlist?.length);
+      
+      if (!playlist || playlist.length === 0) {
+        console.error('No playlist available');
+        return;
       }
       
-      // Force update track info after a short delay to allow the video to change
+      let newIndex;
+      if (direction === 'next') {
+        newIndex = (currentIndex + 1) % playlist.length;
+      } else {
+        newIndex = (currentIndex - 1 + playlist.length) % playlist.length;
+      }
+      
+      console.log('Skipping to index:', newIndex);
+      player.playVideoAt(newIndex);
+      
+      // Force update track info after a short delay
       setTimeout(() => {
-        if (player) {
-          updateTrackInfo(player);
+        if (playerRef.current) {
+          updateTrackInfo(playerRef.current);
         }
       }, 1000);
       
