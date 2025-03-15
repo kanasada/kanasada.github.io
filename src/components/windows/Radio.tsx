@@ -42,150 +42,83 @@ interface YTStateChangeEvent {
   target: YTPlayer;
 }
 
-// Create a unique ID for each player instance
-const generatePlayerId = () => `youtube-player-${Math.random().toString(36).substr(2, 9)}`;
-
 const Radio = () => {
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState('00:00');
   const [duration, setDuration] = useState('00:00');
   const [currentTrack, setCurrentTrack] = useState('Loading...');
   const [artist, setArtist] = useState('');
-  const [isLoading, setIsLoading] = useState(true);
+  const iframeRef = useRef<HTMLIFrameElement | null>(null);
   const playerRef = useRef<YTPlayer | null>(null);
   const intervalRef = useRef<number | null>(null);
-  const mountedRef = useRef(false);
-  const playerId = useRef(generatePlayerId());
 
   useEffect(() => {
-    mountedRef.current = true;
-    let scriptLoaded = false;
+    const tag = document.createElement('script');
+    tag.src = 'https://www.youtube.com/iframe_api';
+    const firstScriptTag = document.getElementsByTagName('script')[0];
+    firstScriptTag.parentNode?.insertBefore(tag, firstScriptTag);
 
-    const loadYouTubeAPI = () => {
-      return new Promise<void>((resolve) => {
-        if (window.YT) {
-          resolve();
-          return;
-        }
-
-        const tag = document.createElement('script');
-        tag.src = 'https://www.youtube.com/iframe_api';
-        const firstScriptTag = document.getElementsByTagName('script')[0];
-        firstScriptTag.parentNode?.insertBefore(tag, firstScriptTag);
-
-        window.onYouTubeIframeAPIReady = () => {
-          scriptLoaded = true;
-          resolve();
-        };
+    window.onYouTubeIframeAPIReady = () => {
+      playerRef.current = new window.YT.Player('youtube-player', {
+        height: '0',
+        width: '0',
+        playerVars: {
+          listType: 'playlist',
+          list: 'PLAlDA2cK3weRJFmSmzcpda6R5pRcYp6Z4',
+          controls: 0,
+          showinfo: 0,
+          autoplay: 1
+        },
+        events: {
+          onReady: onPlayerReady,
+          onStateChange: onPlayerStateChange,
+        },
       });
     };
 
-    const initializePlayer = async () => {
-      try {
-        await loadYouTubeAPI();
-        
-        if (!mountedRef.current) return;
-
-        // Clean up any existing player with the same ID
-        const existingPlayer = document.getElementById(playerId.current);
-        if (existingPlayer) {
-          existingPlayer.remove();
-        }
-
-        // Create a new player container
-        const container = document.createElement('div');
-        container.id = playerId.current;
-        document.getElementById('youtube-container')?.appendChild(container);
-
-        playerRef.current = new window.YT.Player(playerId.current, {
-          height: '0',
-          width: '0',
-          playerVars: {
-            listType: 'playlist',
-            list: 'PLAlDA2cK3weRJFmSmzcpda6R5pRcYp6Z4',
-            controls: 0,
-            showinfo: 0,
-            autoplay: 1
-          },
-          events: {
-            onReady: onPlayerReady,
-            onStateChange: onPlayerStateChange,
-            onError: (event) => {
-              console.error('YouTube player error:', event);
-              setCurrentTrack('Error playing track');
-              setIsLoading(false);
-            }
-          },
-        });
-      } catch (error) {
-        console.error('Error initializing YouTube player:', error);
-        setCurrentTrack('Error loading player');
-        setIsLoading(false);
-      }
-    };
-
-    initializePlayer();
-
     return () => {
-      mountedRef.current = false;
       if (intervalRef.current) {
         clearInterval(intervalRef.current);
       }
       if (playerRef.current) {
-        try {
-          playerRef.current.destroy();
-        } catch (error) {
-          console.error('Error destroying player:', error);
-        }
-        playerRef.current = null;
-      }
-      // Clean up the player container
-      const container = document.getElementById(playerId.current);
-      if (container) {
-        container.remove();
+        playerRef.current.destroy();
       }
     };
   }, []);
 
   const onPlayerReady = (event: YTPlayerEvent) => {
-    if (!mountedRef.current) return;
-    
+    // Player is ready
     const player = event.target;
-    setIsLoading(false);
     
-    try {
-      // Reload the playlist to ensure it's properly loaded
-      player.loadPlaylist('PLAlDA2cK3weRJFmSmzcpda6R5pRcYp6Z4', 
-        Math.floor(Math.random() * 20), // Random start index
-        0 // Start from beginning of track
-      );
-      
-      updateTrackInfo(player);
-    } catch (error) {
-      console.error('Error in onPlayerReady:', error);
-      setCurrentTrack('Error starting playback');
+    // Play a random video in the playlist
+    const playlistSize = player.getPlaylist()?.length || 0;
+    if (playlistSize > 0) {
+      const randomIndex = Math.floor(Math.random() * playlistSize);
+      player.playVideoAt(randomIndex);
+    } else {
+      player.playVideo();
     }
+    
+    updateTrackInfo(player);
   };
 
   const updateTrackInfo = (player: YTPlayer) => {
-    if (!mountedRef.current) return;
-
     try {
       const videoData = player.getVideoData();
       if (videoData && videoData.title) {
+        // Try to split title into song and artist
         const parts = videoData.title.split(' - ');
         if (parts.length > 1) {
-          setCurrentTrack(parts[1].trim());
-          setArtist(parts[0].trim());
+          setCurrentTrack(parts[1]);
+          setArtist(parts[0]);
         } else {
-          setCurrentTrack(videoData.title.trim());
+          setCurrentTrack(videoData.title);
           setArtist('Vin Scully the GOAT');
         }
       }
       updateTimeInfo(player);
     } catch (error) {
       console.error('Error updating track info:', error);
-      setCurrentTrack('Error loading track info');
     }
   };
 
@@ -196,11 +129,9 @@ const Radio = () => {
   };
 
   const onPlayerStateChange = (event: YTStateChangeEvent) => {
-    if (!mountedRef.current) return;
-
     const player = event.target;
-    const newIsPlaying = player.getPlayerState() === window.YT.PlayerState.PLAYING;
-    setIsPlaying(newIsPlaying);
+    
+    setIsPlaying(player.getPlayerState() === window.YT.PlayerState.PLAYING);
     
     if (event.data === window.YT.PlayerState.PLAYING) {
       updateTrackInfo(player);
@@ -208,7 +139,7 @@ const Radio = () => {
       if (intervalRef.current) clearInterval(intervalRef.current);
       
       intervalRef.current = window.setInterval(() => {
-        if (mountedRef.current && player.getPlayerState() === window.YT.PlayerState.PLAYING) {
+        if (player.getPlayerState() === window.YT.PlayerState.PLAYING) {
           updateTimeInfo(player);
         } else {
           if (intervalRef.current) clearInterval(intervalRef.current);
@@ -218,8 +149,6 @@ const Radio = () => {
   };
 
   const updateTimeInfo = (player: YTPlayer) => {
-    if (!mountedRef.current) return;
-
     try {
       const currentTimeInSeconds = player.getCurrentTime();
       const durationInSeconds = player.getDuration();
@@ -232,49 +161,23 @@ const Radio = () => {
   };
 
   const togglePlay = () => {
-    if (!playerRef.current || isLoading) return;
-
-    try {
+    if (playerRef.current) {
       if (isPlaying) {
         playerRef.current.pauseVideo();
       } else {
         playerRef.current.playVideo();
       }
-    } catch (error) {
-      console.error('Error toggling play state:', error);
+      setIsPlaying(!isPlaying);
     }
   };
 
   const skipTrack = (direction: 'next' | 'prev') => {
-    if (!playerRef.current || isLoading) return;
-
-    try {
-      // Get current index before skipping
-      const currentIndex = playerRef.current.getPlaylistIndex();
-      
+    if (playerRef.current) {
       if (direction === 'next') {
         playerRef.current.nextVideo();
       } else {
         playerRef.current.previousVideo();
       }
-
-      // Check if the track actually changed after a delay
-      setTimeout(() => {
-        if (!playerRef.current || !mountedRef.current) return;
-        
-        const newIndex = playerRef.current.getPlaylistIndex();
-        if (newIndex === currentIndex) {
-          // If index didn't change, try to force it
-          if (direction === 'next') {
-            playerRef.current.playVideoAt((currentIndex + 1) % 20); // Assuming playlist length
-          } else {
-            playerRef.current.playVideoAt(currentIndex === 0 ? 19 : currentIndex - 1);
-          }
-        }
-        updateTrackInfo(playerRef.current);
-      }, 500);
-    } catch (error) {
-      console.error(`Error ${direction === 'next' ? 'next' : 'previous'} track:`, error);
     }
   };
 
@@ -298,8 +201,7 @@ const Radio = () => {
                 key={i} 
                 className="w-0.5 bg-[#8E9196]" 
                 style={{ 
-                  height: `${Math.max(10, Math.floor(Math.random() * (isPlaying ? 100 : 20)))}%`,
-                  transition: 'height 150ms ease-in-out'
+                  height: `${Math.max(10, Math.floor(Math.random() * (isPlaying ? 100 : 20)))}%`
                 }}
               ></div>
             ))}
@@ -317,23 +219,20 @@ const Radio = () => {
         <div className="flex justify-between px-2 mt-2 mb-2">
           <div className="flex space-x-1">
             <button 
-              className="p-2 border border-gray-300 bg-gray-100 hover:bg-gray-200 active:bg-gray-300 flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed"
+              className="p-2 border border-gray-300 bg-gray-100 hover:bg-gray-200 active:bg-gray-300 flex items-center justify-center"
               onClick={() => skipTrack('prev')}
-              disabled={isLoading}
             >
               <SkipBack size={14} />
             </button>
             <button 
-              className="p-2 border border-gray-300 bg-gray-100 hover:bg-gray-200 active:bg-gray-300 flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed"
+              className="p-2 border border-gray-300 bg-gray-100 hover:bg-gray-200 active:bg-gray-300 flex items-center justify-center"
               onClick={togglePlay}
-              disabled={isLoading}
             >
               {isPlaying ? <Pause size={14} /> : <Play size={14} />}
             </button>
             <button 
-              className="p-2 border border-gray-300 bg-gray-100 hover:bg-gray-200 active:bg-gray-300 flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed"
+              className="p-2 border border-gray-300 bg-gray-100 hover:bg-gray-200 active:bg-gray-300 flex items-center justify-center"
               onClick={() => skipTrack('next')}
-              disabled={isLoading}
             >
               <SkipForward size={14} />
             </button>
@@ -352,8 +251,10 @@ const Radio = () => {
         </div>
       </div>
       
-      {/* Hidden YouTube iframe container */}
-      <div id="youtube-container" style={{ display: 'none' }} />
+      {/* Hidden YouTube iframe */}
+      <div style={{ display: 'none' }}>
+        <div id="youtube-player"></div>
+      </div>
     </div>
   );
 };
