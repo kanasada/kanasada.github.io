@@ -29,6 +29,8 @@ interface YTPlayer {
   playVideoAt: (index: number) => void;
   nextVideo: () => void;
   previousVideo: () => void;
+  loadPlaylist: (playlist: string, index?: number, startSeconds?: number) => void;
+  getPlaylistIndex: () => number;
 }
 
 interface YTPlayerEvent {
@@ -40,6 +42,9 @@ interface YTStateChangeEvent {
   target: YTPlayer;
 }
 
+// Create a unique ID for each player instance
+const generatePlayerId = () => `youtube-player-${Math.random().toString(36).substr(2, 9)}`;
+
 const Radio = () => {
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState('00:00');
@@ -50,6 +55,7 @@ const Radio = () => {
   const playerRef = useRef<YTPlayer | null>(null);
   const intervalRef = useRef<number | null>(null);
   const mountedRef = useRef(false);
+  const playerId = useRef(generatePlayerId());
 
   useEffect(() => {
     mountedRef.current = true;
@@ -80,7 +86,18 @@ const Radio = () => {
         
         if (!mountedRef.current) return;
 
-        playerRef.current = new window.YT.Player('youtube-player', {
+        // Clean up any existing player with the same ID
+        const existingPlayer = document.getElementById(playerId.current);
+        if (existingPlayer) {
+          existingPlayer.remove();
+        }
+
+        // Create a new player container
+        const container = document.createElement('div');
+        container.id = playerId.current;
+        document.getElementById('youtube-container')?.appendChild(container);
+
+        playerRef.current = new window.YT.Player(playerId.current, {
           height: '0',
           width: '0',
           playerVars: {
@@ -93,6 +110,11 @@ const Radio = () => {
           events: {
             onReady: onPlayerReady,
             onStateChange: onPlayerStateChange,
+            onError: (event) => {
+              console.error('YouTube player error:', event);
+              setCurrentTrack('Error playing track');
+              setIsLoading(false);
+            }
           },
         });
       } catch (error) {
@@ -110,8 +132,17 @@ const Radio = () => {
         clearInterval(intervalRef.current);
       }
       if (playerRef.current) {
-        playerRef.current.destroy();
+        try {
+          playerRef.current.destroy();
+        } catch (error) {
+          console.error('Error destroying player:', error);
+        }
         playerRef.current = null;
+      }
+      // Clean up the player container
+      const container = document.getElementById(playerId.current);
+      if (container) {
+        container.remove();
       }
     };
   }, []);
@@ -122,16 +153,18 @@ const Radio = () => {
     const player = event.target;
     setIsLoading(false);
     
-    // Play a random video in the playlist
-    const playlistSize = player.getPlaylist()?.length || 0;
-    if (playlistSize > 0) {
-      const randomIndex = Math.floor(Math.random() * playlistSize);
-      player.playVideoAt(randomIndex);
-    } else {
-      player.playVideo();
+    try {
+      // Reload the playlist to ensure it's properly loaded
+      player.loadPlaylist('PLAlDA2cK3weRJFmSmzcpda6R5pRcYp6Z4', 
+        Math.floor(Math.random() * 20), // Random start index
+        0 // Start from beginning of track
+      );
+      
+      updateTrackInfo(player);
+    } catch (error) {
+      console.error('Error in onPlayerReady:', error);
+      setCurrentTrack('Error starting playback');
     }
-    
-    updateTrackInfo(player);
   };
 
   const updateTrackInfo = (player: YTPlayer) => {
@@ -140,13 +173,12 @@ const Radio = () => {
     try {
       const videoData = player.getVideoData();
       if (videoData && videoData.title) {
-        // Try to split title into song and artist
         const parts = videoData.title.split(' - ');
         if (parts.length > 1) {
-          setCurrentTrack(parts[1]);
-          setArtist(parts[0]);
+          setCurrentTrack(parts[1].trim());
+          setArtist(parts[0].trim());
         } else {
-          setCurrentTrack(videoData.title);
+          setCurrentTrack(videoData.title.trim());
           setArtist('Vin Scully the GOAT');
         }
       }
@@ -202,28 +234,47 @@ const Radio = () => {
   const togglePlay = () => {
     if (!playerRef.current || isLoading) return;
 
-    if (isPlaying) {
-      playerRef.current.pauseVideo();
-    } else {
-      playerRef.current.playVideo();
+    try {
+      if (isPlaying) {
+        playerRef.current.pauseVideo();
+      } else {
+        playerRef.current.playVideo();
+      }
+    } catch (error) {
+      console.error('Error toggling play state:', error);
     }
   };
 
   const skipTrack = (direction: 'next' | 'prev') => {
     if (!playerRef.current || isLoading) return;
+
     try {
+      // Get current index before skipping
+      const currentIndex = playerRef.current.getPlaylistIndex();
+      
       if (direction === 'next') {
         playerRef.current.nextVideo();
       } else {
         playerRef.current.previousVideo();
       }
+
+      // Check if the track actually changed after a delay
       setTimeout(() => {
-        if (playerRef.current && mountedRef.current) {
-          updateTrackInfo(playerRef.current);
+        if (!playerRef.current || !mountedRef.current) return;
+        
+        const newIndex = playerRef.current.getPlaylistIndex();
+        if (newIndex === currentIndex) {
+          // If index didn't change, try to force it
+          if (direction === 'next') {
+            playerRef.current.playVideoAt((currentIndex + 1) % 20); // Assuming playlist length
+          } else {
+            playerRef.current.playVideoAt(currentIndex === 0 ? 19 : currentIndex - 1);
+          }
         }
+        updateTrackInfo(playerRef.current);
       }, 500);
     } catch (error) {
-      console.error(`Error ${direction} track:`, error);
+      console.error(`Error ${direction === 'next' ? 'next' : 'previous'} track:`, error);
     }
   };
 
@@ -301,10 +352,8 @@ const Radio = () => {
         </div>
       </div>
       
-      {/* Hidden YouTube iframe */}
-      <div style={{ display: 'none' }}>
-        <div id="youtube-player"></div>
-      </div>
+      {/* Hidden YouTube iframe container */}
+      <div id="youtube-container" style={{ display: 'none' }} />
     </div>
   );
 };
