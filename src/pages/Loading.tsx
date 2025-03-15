@@ -1,10 +1,10 @@
-
 import { useEffect, useState } from 'react';
 
 const Loading = () => {
   const [progress, setProgress] = useState(0);
   const [currentText, setCurrentText] = useState("");
   const [showCursor, setShowCursor] = useState(true);
+  const [isInitialized, setIsInitialized] = useState(false);
   
   const loadingTexts = [
     "INSTALLING BASEBALL.EXE",
@@ -18,6 +18,7 @@ const Loading = () => {
   ];
 
   useEffect(() => {
+    setIsInitialized(true);
     let textIndex = 0;
     let charIndex = 0;
     
@@ -52,6 +53,8 @@ const Loading = () => {
   }, []);
   
   useEffect(() => {
+    if (!isInitialized) return;
+    
     const interval = setInterval(() => {
       setProgress(prev => {
         if (prev < 100) {
@@ -63,10 +66,10 @@ const Loading = () => {
     }, 50);
     
     return () => clearInterval(interval);
-  }, []);
+  }, [isInitialized]);
 
   return (
-    <div className="h-screen w-screen bg-black flex flex-col items-center justify-center p-8 font-pixel text-green-500">
+    <div className="fixed inset-0 h-screen w-screen bg-black flex flex-col items-center justify-center p-8 font-pixel text-green-500 z-50">
       <div className="max-w-3xl w-full flex flex-col gap-4">
         <pre className="text-center text-lg whitespace-pre mb-2">
 {`
@@ -78,7 +81,7 @@ const Loading = () => {
 `}
         </pre>
 
-        <div className="text-left mb-2">
+        <div className="text-left mb-2 min-h-[24px]">
           {currentText}
           {showCursor && <span className="animate-blink">_</span>}
         </div>
