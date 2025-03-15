@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useRef } from 'react';
 import { SkipBack, Pause, Play, SkipForward, Share } from 'lucide-react';
 
@@ -15,31 +16,6 @@ declare global {
       };
     };
   }
-}
-
-interface YTPlayer {
-  destroy: () => void;
-  getVideoData: () => any;
-  getCurrentTime: () => number;
-  getDuration: () => number;
-  getPlayerState: () => number;
-  getPlaylist: () => string[];
-  playVideo: () => void;
-  pauseVideo: () => void;
-  playVideoAt: (index: number) => void;
-  nextVideo: () => void;
-  previousVideo: () => void;
-  loadPlaylist: (playlist: string, index?: number, startSeconds?: number) => void;
-  getPlaylistIndex: () => number;
-}
-
-interface YTPlayerEvent {
-  target: YTPlayer;
-}
-
-interface YTStateChangeEvent {
-  data: number;
-  target: YTPlayer;
 }
 
 const Radio = () => {
@@ -130,7 +106,6 @@ const Radio = () => {
 
   const onPlayerStateChange = (event: YTStateChangeEvent) => {
     const player = event.target;
-    console.log('Player state changed:', event.data);
     
     setIsPlaying(player.getPlayerState() === window.YT.PlayerState.PLAYING);
     
