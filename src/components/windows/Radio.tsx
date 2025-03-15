@@ -181,25 +181,21 @@ const Radio = () => {
     try {
       const player = playerRef.current;
       const currentIndex = player.getPlaylistIndex();
-      const playlist = player.getPlaylist();
       
       console.log('Current index:', currentIndex);
-      console.log('Playlist length:', playlist?.length);
       
-      if (!playlist || playlist.length === 0) {
-        console.error('No playlist available');
-        return;
-      }
+      // Force reload the playlist at the new index
+      const playlistId = 'PLAlDA2cK3weRJFmSmzcpda6R5pRcYp6Z4';
+      let newIndex = currentIndex;
       
-      let newIndex;
       if (direction === 'next') {
-        newIndex = (currentIndex + 1) % playlist.length;
+        newIndex = currentIndex + 1;
       } else {
-        newIndex = (currentIndex - 1 + playlist.length) % playlist.length;
+        newIndex = Math.max(0, currentIndex - 1);
       }
       
-      console.log('Skipping to index:', newIndex);
-      player.playVideoAt(newIndex);
+      console.log('Loading playlist at index:', newIndex);
+      player.loadPlaylist(playlistId, newIndex);
       
       // Force update track info after a short delay
       setTimeout(() => {
