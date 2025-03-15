@@ -1,18 +1,39 @@
 import { SkipBack, Play, Pause, SkipForward, Share } from 'lucide-react';
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 
 const playlistId = "PLAlDA2cK3weRJFmSmzcpda6R5pRcYp6Z4"; // Your YouTube Playlist ID
 
 const Radio = () => {
-  const [isPlaying, setIsPlaying] = useState(true); // Assume autoplay is on
+  const [isPlaying, setIsPlaying] = useState(true);
+  const iframeRef = useRef<HTMLIFrameElement | null>(null);
+
+  useEffect(() => {
+    // Inject YouTube Player API
+    const script = document.createElement("script");
+    script.src = "https://www.youtube.com/iframe_api";
+    document.body.appendChild(script);
+  }, []);
+
+  const sendCommand = (command: string) => {
+    if (iframeRef.current) {
+      iframeRef.current.contentWindow?.postMessage(
+        JSON.stringify({ event: "command", func: command, args: [] }),
+        "*"
+      );
+    }
+  };
 
   const togglePlay = () => {
+    if (isPlaying) {
+      sendCommand("pauseVideo");
+    } else {
+      sendCommand("playVideo");
+    }
     setIsPlaying(!isPlaying);
-    alert("Play/Pause control isn't possible with embedded playlists. Use YouTube controls.");
   };
 
   const skipTrack = (direction: 'next' | 'prev') => {
-    alert(`Skipping ${direction} isn't possible with embedded YouTube playlists. Use YouTube controls.`);
+    sendCommand(direction === 'next' ? "nextVideo" : "previousVideo");
   };
 
   return (
@@ -21,9 +42,10 @@ const Radio = () => {
         
         {/* Hidden YouTube Player */}
         <iframe
+          ref={iframeRef}
           width="0"
           height="0"
-          src={`https://www.youtube.com/embed/videoseries?list=${playlistId}&autoplay=1&loop=1`}
+          src={`https://www.youtube.com/embed/videoseries?list=${playlistId}&enablejsapi=1&autoplay=1&loop=1`}
           frameBorder="0"
           allow="autoplay"
           allowFullScreen
