@@ -1,56 +1,108 @@
-import { SkipBack, Play, Pause, SkipForward, Share } from 'lucide-react';
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef } from "react";
+import { SkipBack, Play, Pause, SkipForward, Share } from "lucide-react";
 
 const playlistId = "PLAlDA2cK3weRJFmSmzcpda6R5pRcYp6Z4"; // Your YouTube Playlist ID
 
+declare global {
+  interface Window {
+    onYouTubeIframeAPIReady: () => void;
+    YT: any;
+  }
+}
+
 const Radio = () => {
-  const [isPlaying, setIsPlaying] = useState(true);
-  const iframeRef = useRef<HTMLIFrameElement | null>(null);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [videoTitle, setVideoTitle] = useState("Loading...");
+  const playerRef = useRef<any>(null);
 
   useEffect(() => {
-    // Inject YouTube Player API
-    const script = document.createElement("script");
-    script.src = "https://www.youtube.com/iframe_api";
-    document.body.appendChild(script);
+    const loadYouTubeAPI = () => {
+      if (!window.YT) {
+        const script = document.createElement("script");
+        script.src = "https://www.youtube.com/iframe_api";
+        script.async = true;
+        document.body.appendChild(script);
+      } else {
+        initializePlayer();
+      }
+    };
+
+    window.onYouTubeIframeAPIReady = initializePlayer;
+    loadYouTubeAPI();
+
+    return () => {
+      if (playerRef.current) {
+        playerRef.current.destroy();
+      }
+    };
   }, []);
 
-  const sendCommand = (command: string) => {
-    if (iframeRef.current) {
-      iframeRef.current.contentWindow?.postMessage(
-        JSON.stringify({ event: "command", func: command, args: [] }),
-        "*"
-      );
+  const initializePlayer = () => {
+    playerRef.current = new window.YT.Player("youtube-player", {
+      height: "0",
+      width: "0",
+      playerVars: {
+        listType: "playlist",
+        list: playlistId,
+        autoplay: 1,
+        loop: 1,
+        enablejsapi: 1,
+        controls: 0,
+      },
+      events: {
+        onReady: (event: any) => {
+          event.target.playVideo();
+          setIsPlaying(true);
+          updateVideoTitle();
+        },
+        onStateChange: (event: any) => {
+          if (event.data === window.YT.PlayerState.PLAYING) {
+            setIsPlaying(true);
+            updateVideoTitle();
+          } else if (event.data === window.YT.PlayerState.PAUSED) {
+            setIsPlaying(false);
+          }
+        },
+      },
+    });
+  };
+
+  const updateVideoTitle = () => {
+    if (playerRef.current) {
+      setTimeout(() => {
+        const videoData = playerRef.current.getVideoData();
+        setVideoTitle(videoData?.title || "Unknown Title");
+      }, 500);
     }
   };
 
   const togglePlay = () => {
-    if (isPlaying) {
-      sendCommand("pauseVideo");
-    } else {
-      sendCommand("playVideo");
+    if (playerRef.current) {
+      if (isPlaying) {
+        playerRef.current.pauseVideo();
+      } else {
+        playerRef.current.playVideo();
+      }
+      setIsPlaying(!isPlaying);
     }
-    setIsPlaying(!isPlaying);
   };
 
-  const skipTrack = (direction: 'next' | 'prev') => {
-    sendCommand(direction === 'next' ? "nextVideo" : "previousVideo");
+  const skipTrack = (direction: "next" | "prev") => {
+    if (playerRef.current) {
+      if (direction === "next") {
+        playerRef.current.nextVideo();
+      } else {
+        playerRef.current.previousVideo();
+      }
+      updateVideoTitle(); // Update song info after skipping
+    }
   };
 
   return (
     <div className="h-full flex flex-col font-pixel">
       <div className="bg-[#F1F1F1] border border-gray-800 w-full flex flex-col overflow-hidden">
-        
         {/* Hidden YouTube Player */}
-        <iframe
-          ref={iframeRef}
-          width="0"
-          height="0"
-          src={`https://www.youtube.com/embed/videoseries?list=${playlistId}&enablejsapi=1&autoplay=1&loop=1`}
-          frameBorder="0"
-          allow="autoplay"
-          allowFullScreen
-          title="YouTube Radio"
-        ></iframe>
+        <div id="youtube-player"></div>
 
         {/* Header Bar */}
         <div className="flex items-center border-b border-gray-800 p-1 bg-white">
@@ -61,37 +113,29 @@ const Radio = () => {
           <div className="font-pixel text-xs text-right">Scully Radio</div>
         </div>
 
-        {/* Visualizer (Fake animation) */}
-        <div className="h-8 bg-black p-1">
-          <div className="h-full flex items-center justify-evenly">
-            {Array.from({ length: 32 }).map((_, i) => (
-              <div 
-                key={i} 
-                className="w-0.5 bg-[#8E9196]" 
-                style={{ height: `${Math.max(10, Math.floor(Math.random() * (isPlaying ? 100 : 20)))}%` }}
-              ></div>
-            ))}
-          </div>
+        {/* Current Track Info */}
+        <div className="px-2 py-2">
+          <div className="text-sm font-pixel mb-0.5">{videoTitle}</div>
         </div>
 
         {/* Controls */}
         <div className="flex justify-between px-2 mt-2 mb-2">
           <div className="flex space-x-1">
-            <button 
+            <button
               className="p-2 border border-gray-300 bg-gray-100 hover:bg-gray-200 active:bg-gray-300"
-              onClick={() => skipTrack('prev')}
+              onClick={() => skipTrack("prev")}
             >
               <SkipBack size={14} />
             </button>
-            <button 
+            <button
               className="p-2 border border-gray-300 bg-gray-100 hover:bg-gray-200 active:bg-gray-300"
               onClick={togglePlay}
             >
               {isPlaying ? <Pause size={14} /> : <Play size={14} />}
             </button>
-            <button 
+            <button
               className="p-2 border border-gray-300 bg-gray-100 hover:bg-gray-200 active:bg-gray-300"
-              onClick={() => skipTrack('next')}
+              onClick={() => skipTrack("next")}
             >
               <SkipForward size={14} />
             </button>
