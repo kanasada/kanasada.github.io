@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useRef } from 'react';
 import { SkipBack, Pause, Play, SkipForward, Share } from 'lucide-react';
 
@@ -18,53 +17,110 @@ declare global {
   }
 }
 
+interface YTPlayer {
+  destroy: () => void;
+  getVideoData: () => any;
+  getCurrentTime: () => number;
+  getDuration: () => number;
+  getPlayerState: () => number;
+  getPlaylist: () => string[];
+  playVideo: () => void;
+  pauseVideo: () => void;
+  playVideoAt: (index: number) => void;
+  nextVideo: () => void;
+  previousVideo: () => void;
+}
+
+interface YTPlayerEvent {
+  target: YTPlayer;
+}
+
+interface YTStateChangeEvent {
+  data: number;
+  target: YTPlayer;
+}
+
 const Radio = () => {
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState('00:00');
   const [duration, setDuration] = useState('00:00');
   const [currentTrack, setCurrentTrack] = useState('Loading...');
   const [artist, setArtist] = useState('');
-  const iframeRef = useRef<HTMLIFrameElement | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
   const playerRef = useRef<YTPlayer | null>(null);
   const intervalRef = useRef<number | null>(null);
+  const mountedRef = useRef(false);
 
   useEffect(() => {
-    const tag = document.createElement('script');
-    tag.src = 'https://www.youtube.com/iframe_api';
-    const firstScriptTag = document.getElementsByTagName('script')[0];
-    firstScriptTag.parentNode?.insertBefore(tag, firstScriptTag);
+    mountedRef.current = true;
+    let scriptLoaded = false;
 
-    window.onYouTubeIframeAPIReady = () => {
-      playerRef.current = new window.YT.Player('youtube-player', {
-        height: '0',
-        width: '0',
-        playerVars: {
-          listType: 'playlist',
-          list: 'PLAlDA2cK3weRJFmSmzcpda6R5pRcYp6Z4',
-          controls: 0,
-          showinfo: 0,
-          autoplay: 1
-        },
-        events: {
-          onReady: onPlayerReady,
-          onStateChange: onPlayerStateChange,
-        },
+    const loadYouTubeAPI = () => {
+      return new Promise<void>((resolve) => {
+        if (window.YT) {
+          resolve();
+          return;
+        }
+
+        const tag = document.createElement('script');
+        tag.src = 'https://www.youtube.com/iframe_api';
+        const firstScriptTag = document.getElementsByTagName('script')[0];
+        firstScriptTag.parentNode?.insertBefore(tag, firstScriptTag);
+
+        window.onYouTubeIframeAPIReady = () => {
+          scriptLoaded = true;
+          resolve();
+        };
       });
     };
 
+    const initializePlayer = async () => {
+      try {
+        await loadYouTubeAPI();
+        
+        if (!mountedRef.current) return;
+
+        playerRef.current = new window.YT.Player('youtube-player', {
+          height: '0',
+          width: '0',
+          playerVars: {
+            listType: 'playlist',
+            list: 'PLAlDA2cK3weRJFmSmzcpda6R5pRcYp6Z4',
+            controls: 0,
+            showinfo: 0,
+            autoplay: 1
+          },
+          events: {
+            onReady: onPlayerReady,
+            onStateChange: onPlayerStateChange,
+          },
+        });
+      } catch (error) {
+        console.error('Error initializing YouTube player:', error);
+        setCurrentTrack('Error loading player');
+        setIsLoading(false);
+      }
+    };
+
+    initializePlayer();
+
     return () => {
+      mountedRef.current = false;
       if (intervalRef.current) {
         clearInterval(intervalRef.current);
       }
       if (playerRef.current) {
         playerRef.current.destroy();
+        playerRef.current = null;
       }
     };
   }, []);
 
   const onPlayerReady = (event: YTPlayerEvent) => {
-    // Player is ready
+    if (!mountedRef.current) return;
+    
     const player = event.target;
+    setIsLoading(false);
     
     // Play a random video in the playlist
     const playlistSize = player.getPlaylist()?.length || 0;
@@ -79,6 +135,8 @@ const Radio = () => {
   };
 
   const updateTrackInfo = (player: YTPlayer) => {
+    if (!mountedRef.current) return;
+
     try {
       const videoData = player.getVideoData();
       if (videoData && videoData.title) {
@@ -95,6 +153,7 @@ const Radio = () => {
       updateTimeInfo(player);
     } catch (error) {
       console.error('Error updating track info:', error);
+      setCurrentTrack('Error loading track info');
     }
   };
 
@@ -105,9 +164,11 @@ const Radio = () => {
   };
 
   const onPlayerStateChange = (event: YTStateChangeEvent) => {
+    if (!mountedRef.current) return;
+
     const player = event.target;
-    
-    setIsPlaying(player.getPlayerState() === window.YT.PlayerState.PLAYING);
+    const newIsPlaying = player.getPlayerState() === window.YT.PlayerState.PLAYING;
+    setIsPlaying(newIsPlaying);
     
     if (event.data === window.YT.PlayerState.PLAYING) {
       updateTrackInfo(player);
@@ -115,7 +176,7 @@ const Radio = () => {
       if (intervalRef.current) clearInterval(intervalRef.current);
       
       intervalRef.current = window.setInterval(() => {
-        if (player.getPlayerState() === window.YT.PlayerState.PLAYING) {
+        if (mountedRef.current && player.getPlayerState() === window.YT.PlayerState.PLAYING) {
           updateTimeInfo(player);
         } else {
           if (intervalRef.current) clearInterval(intervalRef.current);
@@ -125,6 +186,8 @@ const Radio = () => {
   };
 
   const updateTimeInfo = (player: YTPlayer) => {
+    if (!mountedRef.current) return;
+
     try {
       const currentTimeInSeconds = player.getCurrentTime();
       const durationInSeconds = player.getDuration();
@@ -137,23 +200,30 @@ const Radio = () => {
   };
 
   const togglePlay = () => {
-    if (playerRef.current) {
-      if (isPlaying) {
-        playerRef.current.pauseVideo();
-      } else {
-        playerRef.current.playVideo();
-      }
-      setIsPlaying(!isPlaying);
+    if (!playerRef.current || isLoading) return;
+
+    if (isPlaying) {
+      playerRef.current.pauseVideo();
+    } else {
+      playerRef.current.playVideo();
     }
   };
 
   const skipTrack = (direction: 'next' | 'prev') => {
-    if (playerRef.current) {
+    if (!playerRef.current || isLoading) return;
+    try {
       if (direction === 'next') {
         playerRef.current.nextVideo();
       } else {
         playerRef.current.previousVideo();
       }
+      setTimeout(() => {
+        if (playerRef.current && mountedRef.current) {
+          updateTrackInfo(playerRef.current);
+        }
+      }, 500);
+    } catch (error) {
+      console.error(`Error ${direction} track:`, error);
     }
   };
 
@@ -177,7 +247,8 @@ const Radio = () => {
                 key={i} 
                 className="w-0.5 bg-[#8E9196]" 
                 style={{ 
-                  height: `${Math.max(10, Math.floor(Math.random() * (isPlaying ? 100 : 20)))}%`
+                  height: `${Math.max(10, Math.floor(Math.random() * (isPlaying ? 100 : 20)))}%`,
+                  transition: 'height 150ms ease-in-out'
                 }}
               ></div>
             ))}
@@ -195,20 +266,23 @@ const Radio = () => {
         <div className="flex justify-between px-2 mt-2 mb-2">
           <div className="flex space-x-1">
             <button 
-              className="p-2 border border-gray-300 bg-gray-100 hover:bg-gray-200 active:bg-gray-300 flex items-center justify-center"
+              className="p-2 border border-gray-300 bg-gray-100 hover:bg-gray-200 active:bg-gray-300 flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed"
               onClick={() => skipTrack('prev')}
+              disabled={isLoading}
             >
               <SkipBack size={14} />
             </button>
             <button 
-              className="p-2 border border-gray-300 bg-gray-100 hover:bg-gray-200 active:bg-gray-300 flex items-center justify-center"
+              className="p-2 border border-gray-300 bg-gray-100 hover:bg-gray-200 active:bg-gray-300 flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed"
               onClick={togglePlay}
+              disabled={isLoading}
             >
               {isPlaying ? <Pause size={14} /> : <Play size={14} />}
             </button>
             <button 
-              className="p-2 border border-gray-300 bg-gray-100 hover:bg-gray-200 active:bg-gray-300 flex items-center justify-center"
+              className="p-2 border border-gray-300 bg-gray-100 hover:bg-gray-200 active:bg-gray-300 flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed"
               onClick={() => skipTrack('next')}
+              disabled={isLoading}
             >
               <SkipForward size={14} />
             </button>
