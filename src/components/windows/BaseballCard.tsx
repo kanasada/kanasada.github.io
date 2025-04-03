@@ -27,7 +27,7 @@ import playerCardImg from '/images/player_card.jpeg';
 import aboutMeImg from '/images/about_me.jpg';
 import expImg from '/images/exp.jpg';
 import blogImg from '/images/blogpixel.png';
-import myCV from '/files/KanaCV.pdf'
+import myCV from '/files/Kana_Sadahiro_CV4.pdf'
 
 const cards: CardContent[] = [
   {
