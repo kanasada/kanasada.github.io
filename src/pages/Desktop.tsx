@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from 'react';
 import { useWindowStore, WindowId } from '@/utils/windowUtils';
 import Window from '@/components/Window';
@@ -43,22 +42,21 @@ const Desktop = () => {
   return (
     <div className="h-screen w-screen overflow-hidden flex flex-col font-pixel">
       <div className="text-white py-1 px-3 flex justify-between items-center shadow-md bg-blue-800">
-        <div className="font-pixel text-xl">KANA'S STADIUM</div>
-        <div className="text-sm">{formatDate(currentTime)} | {formatTime(currentTime)}</div>
+        <div className="font-pixel text-base sm:text-xl">KANA'S STADIUM</div>
+        <div className="text-xs sm:text-sm">{formatDate(currentTime)} | {formatTime(currentTime)}</div>
       </div>
 
       <div className="flex-1 relative text-zinc-950 bg-cover bg-center" style={{
         backgroundImage: `url('/images/suzuki2.gif')`
       }}>
-
-        <div className="absolute top-4 right-4 flex flex-col gap-6 z-10">
+        <div className="absolute top-4 right-4 flex flex-col gap-2 sm:gap-6 z-10">
           {/* Desktop Icons */}
           {windows.map((win) => (
             <div key={win.id} className="desktop-icon" onClick={() => openWindow(win.id)}>
-              <div className="w-12 h-12 bg-white rounded-md flex items-center justify-center">
-                <img src={win.icon} alt={win.name} className="w-10 h-10" />
+              <div className="w-8 h-8 sm:w-12 sm:h-12 bg-white rounded-md flex items-center justify-center">
+                <img src={win.icon} alt={win.name} className="w-6 h-6 sm:w-10 sm:h-10" />
               </div>
-              <span className="text-sm text-white">{win.name}</span>
+              <span className="text-xs sm:text-sm text-white">{win.name}</span>
             </div>
           ))}
         </div>
@@ -72,8 +70,8 @@ const Desktop = () => {
       </div>
 
       <div className="text-white py-1 px-3 flex justify-between items-center shadow-inner text-xs bg-blue-800">
-        <div>Last Updated: {formatDate(new Date())}</div>
-        <div>Visitor Count: {visitorCount}</div>
+        <div className="text-[10px] sm:text-xs">Last Updated: {formatDate(new Date())}</div>
+        <div className="text-[10px] sm:text-xs">Visitor Count: {visitorCount}</div>
       </div>
     </div>
   );

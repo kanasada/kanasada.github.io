@@ -1,4 +1,4 @@
-import { useState, useRef, ReactNode, MouseEvent, useEffect } from 'react';
+import { useState, useRef, ReactNode, MouseEvent, TouchEvent, useEffect } from 'react';
 import { X } from 'lucide-react';
 import { WindowId, useWindowStore } from '@/utils/windowUtils';
 
@@ -104,14 +104,59 @@ const Window = ({
     }
   };
   
+  const handleTouchStart = (e: TouchEvent) => {
+    e.preventDefault();
+    if (!windowRef.current) return;
+    
+    focusWindow(id);
+    
+    const touch = e.touches[0];
+    const rect = windowRef.current.getBoundingClientRect();
+    setDragOffset({
+      x: touch.clientX - rect.left,
+      y: touch.clientY - rect.top
+    });
+    
+    setIsDragging(true);
+  };
+  
+  const handleTouchMove = (e: TouchEvent) => {
+    if (!isDragging) return;
+    
+    const touch = e.touches[0];
+    let newX = touch.clientX - dragOffset.x;
+    let newY = touch.clientY - dragOffset.y;
+    
+    const viewportWidth = window.innerWidth;
+    const viewportHeight = window.innerHeight;
+    const windowWidth = windowRef.current?.offsetWidth || windowState.size.width;
+    const windowHeight = windowRef.current?.offsetHeight || windowState.size.height;
+    
+    newX = Math.max(0, Math.min(newX, viewportWidth - windowWidth));
+    newY = Math.max(0, Math.min(newY, viewportHeight - windowHeight));
+    
+    updateWindowPosition(id, {
+      x: newX,
+      y: newY
+    });
+  };
+  
+  const handleTouchEnd = () => {
+    setIsDragging(false);
+  };
+  
   useEffect(() => {
     if (isDragging) {
       document.addEventListener('mousemove', handleMouseMove as any);
       document.addEventListener('mouseup', handleMouseUp);
+      document.addEventListener('touchmove', handleTouchMove as any);
+      document.addEventListener('touchend', handleTouchEnd);
       
       return () => {
         document.removeEventListener('mousemove', handleMouseMove as any);
         document.removeEventListener('mouseup', handleMouseUp);
+        document.removeEventListener('touchmove', handleTouchMove as any);
+        document.removeEventListener('touchend', handleTouchEnd);
       };
     }
   }, [isDragging]);
@@ -127,15 +172,17 @@ const Window = ({
         top: `${windowState.position.y}px`,
         width: `${windowState.size.width}px`,
         height: `${windowState.size.height}px`,
-        zIndex: windowState.zIndex
+        zIndex: windowState.zIndex,
+        touchAction: 'none'
       }} 
       onClick={handleWindowClick}
     >
       <div 
-        onMouseDown={handleMouseDown} 
+        onMouseDown={handleMouseDown}
+        onTouchStart={handleTouchStart}
         className="win95-titlebar cursor-move font-pixel bg-blue-800"
       >
-        <div className="text-sm font-bold">{windowState.title}</div>
+        <div className="text-xs sm:text-sm font-bold">{windowState.title}</div>
         <div className="flex gap-1">
           <button 
             className="win95-button w-5 h-5 flex items-center justify-center p-0" 
