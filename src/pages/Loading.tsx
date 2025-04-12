@@ -69,7 +69,15 @@ const Loading = () => {
   }, [isInitialized]);
 
   return (
-    <div className="fixed inset-0 h-screen w-screen bg-black flex flex-col items-center justify-center p-8 font-pixel text-green-500 z-50">
+    <div 
+      className="fixed inset-0 h-screen w-screen bg-black flex flex-col items-center justify-center p-8 font-pixel text-green-500 z-50"
+      onClick={() => {
+        if (progress === 100) {
+          const event = new KeyboardEvent('keydown', { key: ' ' });
+          window.dispatchEvent(event);
+        }
+      }}
+    >
       <div className="max-w-3xl w-full flex flex-col gap-4">
         <pre className="text-center text-lg whitespace-pre mb-2">
 {`
@@ -94,7 +102,14 @@ const Loading = () => {
         </div>
 
         <div className="text-center mt-10 font-pixel">
-          PRESS SPACE TO ENTER STADIUM{showCursor && <span className="animate-blink">_</span>}
+          {progress === 100 ? (
+            <>
+              <div className="sm:hidden">TAP ANYWHERE TO ENTER STADIUM{showCursor && <span className="animate-blink">_</span>}</div>
+              <div className="hidden sm:block">PRESS ANY KEY TO ENTER STADIUM{showCursor && <span className="animate-blink">_</span>}</div>
+            </>
+          ) : (
+            <div>LOADING...{showCursor && <span className="animate-blink">_</span>}</div>
+          )}
         </div>
       </div>
     </div>

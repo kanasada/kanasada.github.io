@@ -12,17 +12,45 @@ const queryClient = new QueryClient();
 
 const App = () => {
   const [isLoading, setIsLoading] = useState(true);
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    // Check if device is mobile
+    const checkMobile = () => {
+      return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    };
+    
+    setIsMobile(checkMobile());
+  }, []);
 
   useEffect(() => {
     const handleKeyPress = (e: KeyboardEvent) => {
-      if (isLoading && e.key === " ") {
-        // Removed startup sound
+      if (isLoading) {
         setIsLoading(false);
       }
     };
 
+    const handleTouch = () => {
+      if (isLoading) {
+        setIsLoading(false);
+      }
+    };
+
+    // Auto-progress after loading animation completes (5 seconds)
+    const autoProgressTimer = setTimeout(() => {
+      if (isLoading) {
+        setIsLoading(false);
+      }
+    }, 5000);
+
     window.addEventListener("keydown", handleKeyPress);
-    return () => window.removeEventListener("keydown", handleKeyPress);
+    window.addEventListener("touchstart", handleTouch);
+    
+    return () => {
+      window.removeEventListener("keydown", handleKeyPress);
+      window.removeEventListener("touchstart", handleTouch);
+      clearTimeout(autoProgressTimer);
+    };
   }, [isLoading]);
 
   return (
