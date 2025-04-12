@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
 
@@ -74,31 +73,32 @@ const Guestbook = () => {
 
   return (
     <div className="h-auto flex flex-col font-ms-sans">
-      <h2 className="text-lg font-bold mb-4 text-blue-800">Stadium Guestbook</h2>
+      <h2 className="text-base sm:text-lg font-bold mb-2 sm:mb-4 text-blue-800">Stadium Guestbook</h2>
       
-      <div className="mb-4">
-        <form onSubmit={handleSubmit} className="win95-inset p-3">
-          <div className="mb-3">
-            <label className="block text-sm font-bold mb-1" htmlFor="name">
+      <div className="mb-2 sm:mb-4">
+        <form onSubmit={handleSubmit} className="win95-inset p-2 sm:p-3">
+          <div className="mb-2 sm:mb-3">
+            <label className="block text-xs sm:text-sm font-bold mb-1" htmlFor="name">
               Your Name:
             </label>
             <input
               id="name"
               type="text"
-              className="w-full border border-gray-400 px-2 py-1 text-sm"
+              className="w-full border border-gray-400 px-2 py-1 text-xs sm:text-sm"
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder="Enter your name"
+              autoComplete="off"
             />
           </div>
           
-          <div className="mb-3">
-            <label className="block text-sm font-bold mb-1" htmlFor="message">
+          <div className="mb-2 sm:mb-3">
+            <label className="block text-xs sm:text-sm font-bold mb-1" htmlFor="message">
               Message:
             </label>
             <textarea
               id="message"
-              className="w-full border border-gray-400 px-2 py-1 text-sm"
+              className="w-full border border-gray-400 px-2 py-1 text-xs sm:text-sm"
               rows={3}
               value={message}
               onChange={(e) => setMessage(e.target.value)}
@@ -107,7 +107,7 @@ const Guestbook = () => {
           </div>
           
           <div className="flex justify-end">
-            <button type="submit" className="win95-button text-sm">
+            <button type="submit" className="win95-button text-xs sm:text-sm">
               Sign Guestbook
             </button>
           </div>
@@ -115,18 +115,18 @@ const Guestbook = () => {
       </div>
       
       <div className="flex-1 overflow-hidden">
-        <div className="font-bold text-sm mb-2">Recent Visitors</div>
+        <div className="font-bold text-xs sm:text-sm mb-1 sm:mb-2">Recent Visitors</div>
         <div className="win95-inset h-[150px] overflow-auto">
           {entries.map((entry, index) => (
             <div 
               key={index}
               className={`p-2 border-b border-gray-300 ${index % 2 === 0 ? 'bg-gray-100' : 'bg-white'}`}
             >
-              <div className="flex justify-between text-sm">
+              <div className="flex justify-between text-xs sm:text-sm">
                 <span className="font-bold">{entry.name}</span>
-                <span className="text-xs text-gray-500">{formatDate(entry.date)}</span>
+                <span className="text-[10px] sm:text-xs text-gray-500">{formatDate(entry.date)}</span>
               </div>
-              <div className="text-xs mt-1">{entry.message}</div>
+              <div className="text-[10px] sm:text-xs mt-1">{entry.message}</div>
             </div>
           ))}
         </div>

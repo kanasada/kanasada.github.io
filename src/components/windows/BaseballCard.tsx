@@ -96,13 +96,13 @@ const BaseballCard = () => {
 
   return (
     <div className="h-full flex flex-col font-pixel overflow-hidden">
-      <div className="p-4 h-full overflow-auto">
+      <div className="p-2 sm:p-4 h-full overflow-auto">
         {!isExpanded ? (
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-4">
             {cards.map((card) => (
               <div 
                 key={card.id}
-                className="border-2 border-blue-800 rounded-lg bg-white overflow-hidden cursor-pointer hover:shadow-lg transition-shadow h-48"
+                className="border-2 border-blue-800 rounded-lg bg-white overflow-hidden cursor-pointer hover:shadow-lg transition-shadow h-40 sm:h-48"
                 onClick={() => handleCardClick(card)}
               >
                 <div className="h-full w-full relative">
@@ -114,12 +114,12 @@ const BaseballCard = () => {
                         className="w-full h-full object-cover"
                       />
                       <div className="absolute bottom-0 left-0 right-0 bg-black bg-opacity-70 px-2 py-1">
-                        <div className="text-white text-sm font-pixel truncate">{card.title}</div>
+                        <div className="text-white text-xs sm:text-sm font-pixel truncate">{card.title}</div>
                       </div>
                     </div>
                   ) : (
                     <div className="w-full h-full flex items-center justify-center bg-blue-100">
-                      <div className="text-blue-800 font-pixel">{card.title}</div>
+                      <div className="text-blue-800 font-pixel text-sm sm:text-base">{card.title}</div>
                     </div>
                   )}
                 </div>
@@ -130,30 +130,30 @@ const BaseballCard = () => {
           <div className="flex flex-col h-full">
             <button 
               onClick={handleBackClick}
-              className="self-start mb-4 px-3 py-1 bg-blue-800 text-white rounded hover:bg-opacity-90"
+              className="self-start mb-2 sm:mb-4 px-2 sm:px-3 py-1 bg-blue-800 text-white rounded hover:bg-opacity-90 text-xs sm:text-sm"
             >
               Back to cards
             </button>
             
             <div className="border-4 border-blue-800 rounded-lg bg-white overflow-hidden flex-1">
-              <div className="bg-blue-800 text-white font-pixel py-1 px-2">
+              <div className="bg-blue-800 text-white font-pixel py-1 px-2 text-sm sm:text-base">
                 {selectedCard?.title || 'Baseball Card'}
               </div>
-              <div className="p-4">
+              <div className="p-2 sm:p-4">
                 {selectedCard?.id === 'player' ? (
                   <div>
-                    <div className="text-xl font-pixel mb-1">{selectedCard.content.name}</div>
-                    <div className="text-sm mb-1">{selectedCard.content.position}</div>
-                    <div className="text-sm mb-3">{selectedCard.content.age}</div>
+                    <div className="text-lg sm:text-xl font-pixel mb-1">{selectedCard.content.name}</div>
+                    <div className="text-xs sm:text-sm mb-1">{selectedCard.content.position}</div>
+                    <div className="text-xs sm:text-sm mb-2 sm:mb-3">{selectedCard.content.age}</div>
                     
-                    <div className="mb-3">
-                      <div className="font-pixel mb-1">Interests:</div>
-                      <div className="text-sm">{selectedCard.content.interests?.join(', ')}</div>
+                    <div className="mb-2 sm:mb-3">
+                      <div className="font-pixel mb-1 text-sm sm:text-base">Interests:</div>
+                      <div className="text-xs sm:text-sm">{selectedCard.content.interests?.join(', ')}</div>
                     </div>
                     
                     <div>
-                      <div className="font-pixel mb-2">Fun Stats:</div>
-                      <ul className="list-disc pl-5 text-sm">
+                      <div className="font-pixel mb-1 text-sm sm:text-base">Fun Stats:</div>
+                      <ul className="list-disc pl-4 sm:pl-5 text-xs sm:text-sm">
                         {selectedCard.content.stats?.map((stat, index) => (
                           <li key={index}>{stat.label}: {stat.value}</li>
                         ))}
@@ -162,15 +162,17 @@ const BaseballCard = () => {
                   </div>
                 ) : (
                   <div>
-                    <div className="text-lg mb-4">{selectedCard?.content.description}</div>
+                    <div className="text-sm sm:text-lg mb-3 sm:mb-4">{selectedCard?.content.description}</div>
                     
                     {selectedCard?.content.links && selectedCard.content.links.length > 0 && (
-                      <div className="mt-4">
+                      <div className="mt-3 sm:mt-4">
                         {selectedCard.content.links.map((link, index) => (
                           <a 
                             key={index}
                             href={link.url}
-                            className="text-blue-800 underline hover:text-opacity-80"
+                            className="text-blue-800 underline hover:text-opacity-80 text-sm sm:text-base"
+                            target="_blank"
+                            rel="noopener noreferrer"
                           >
                             {link.label}
                           </a>

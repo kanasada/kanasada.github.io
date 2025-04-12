@@ -105,6 +105,11 @@ const Radio = () => {
         showinfo: 0,
         autoplay: 1,
         enablejsapi: 1,
+        modestbranding: 1,
+        playsinline: 1,
+        rel: 0,
+        fs: 0,
+        origin: window.location.origin
       },
       events: {
         onReady: onPlayerReady,
@@ -283,74 +288,51 @@ const Radio = () => {
   };
 
   return (
-    <div className="h-full flex flex-col font-pixel">
-      <div className="bg-[#F1F1F1] border border-gray-800 w-full flex flex-col overflow-hidden">
-        {/* Header bar */}
-        <div className="flex items-center border-b border-gray-800 p-1 bg-white">
-          <div className="h-3 w-3 border border-gray-800 mr-1 flex-shrink-0">
-            <div className="w-1 h-1 bg-black m-0.5"></div>
-          </div>
-          <div className="flex-1 h-0.5 bg-gray-800 mx-1"></div>
-          <div className="font-pixel text-xs text-right">Scully Radio</div>
-        </div>
-        
-        {/* Visualizer */}
-        <div className="h-8 bg-black p-1">
-          <div className="h-full flex items-center justify-evenly">
-            {Array.from({ length: 32 }).map((_, i) => (
-              <div 
-                key={i} 
-                className="w-0.5 bg-[#8E9196]" 
-                style={{ 
-                  height: `${Math.max(10, Math.floor(Math.random() * (isPlaying ? 100 : 20)))}%`
-                }}
-              ></div>
-            ))}
-          </div>
-        </div>
-        
-        {/* Current track info */}
-        <div className="px-2 py-2">
-          <div className="text-xs text-gray-700 mb-1">{currentTime} / {duration}</div>
-          <div className="text-sm font-pixel mb-0.5">{currentTrack}</div>
-          <div className="text-xs">{artist}</div>
-        </div>
-        
-        {/* Controls */}
-        <div className="flex justify-between px-2 mt-2 mb-2">
-          <div className="flex space-x-1">
-            <button 
-              className="p-2 border border-gray-300 bg-gray-100 hover:bg-gray-200 active:bg-gray-300 flex items-center justify-center"
-              onClick={() => skipTrack('prev')}
-              disabled={!playerReady || isSkipping}
-            >
-              <SkipBack size={14} />
-            </button>
-            <button 
-              className="p-2 border border-gray-300 bg-gray-100 hover:bg-gray-200 active:bg-gray-300 flex items-center justify-center"
-              onClick={togglePlay}
-              disabled={!playerReady}
-            >
-              {isPlaying ? <Pause size={14} /> : <Play size={14} />}
-            </button>
-            <button 
-              className="p-2 border border-gray-300 bg-gray-100 hover:bg-gray-200 active:bg-gray-300 flex items-center justify-center"
-              onClick={() => skipTrack('next')}
-              disabled={!playerReady || isSkipping}
-            >
-              <SkipForward size={14} />
-            </button>
-          </div>
-          
-          <div className="flex space-x-1">
-            <a
-              href="https://www.youtube.com/playlist?list=PLAlDA2cK3weRJFmSmzcpda6R5pRcYp6Z4"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="p-2 border border-gray-300 bg-gray-100 hover:bg-gray-200 active:bg-gray-300 flex items-center justify-center"
-            >
-              <Share size={14} />
-            </a>
+    <div className="h-full flex flex-col font-ms-sans">
+      <div className="p-2 sm:p-4 h-full overflow-auto">
+        <div className="win95-inset p-3 sm:p-4">
+          <div className="flex flex-col gap-3 sm:gap-4">
+            <div className="text-center">
+              <div className="text-lg sm:text-xl font-bold mb-1">{currentTrack}</div>
+              <div className="text-sm sm:text-base text-gray-600">{artist}</div>
+            </div>
+            
+            <div className="flex justify-center gap-2 sm:gap-4">
+              <button 
+                onClick={() => skipTrack('prev')}
+                className="win95-button p-1 sm:p-2"
+                disabled={!playerReady || isSkipping}
+              >
+                <SkipBack size={16} />
+              </button>
+              
+              <button 
+                onClick={togglePlay}
+                className="win95-button p-2 sm:p-3"
+                disabled={!playerReady}
+              >
+                {isPlaying ? <Pause size={20} /> : <Play size={20} />}
+              </button>
+              
+              <button 
+                onClick={() => skipTrack('next')}
+                className="win95-button p-1 sm:p-2"
+                disabled={!playerReady || isSkipping}
+              >
+                <SkipForward size={16} />
+              </button>
+            </div>
+            
+            <div className="flex items-center gap-2 text-xs sm:text-sm">
+              <span>{currentTime}</span>
+              <div className="flex-1 h-2 bg-gray-300 rounded-full overflow-hidden">
+                <div 
+                  className="h-full bg-blue-800"
+                  style={{ width: `${(parseInt(currentTime) / parseInt(duration)) * 100}%` }}
+                ></div>
+              </div>
+              <span>{duration}</span>
+            </div>
           </div>
         </div>
       </div>
