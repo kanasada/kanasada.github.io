@@ -36,10 +36,9 @@ const Jumbotron = () => {
               src="https://www.youtube.com/embed/videoseries?si=Q1GGufncqXn4H70B&amp;controls=0&amp;list=PL38PovI3ABXaVNj5kYIMswiWr8h1bY82a"
               title="Dodgers Legendary Moments"
               frameBorder="0"
-              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share; playsinline"
               referrerPolicy="strict-origin-when-cross-origin"
               allowFullScreen
-              playsinline
             ></iframe>
           </div>
         </div>
