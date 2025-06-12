@@ -58,7 +58,7 @@ const initialWindows: Record<WindowId, WindowState> = {
     isFocused: false,
     zIndex: 0,
     position: { x: 550, y: 80 },
-    size: { width: 450, height: 400 },
+    size: { width: 450, height: 300 },
   },
   jumbotron: {
     id: 'jumbotron',
